@@ -1,9 +1,12 @@
-const Validation = require('../errors/Validation');
+const ValidationError = require('../errors/Validation');
 
 module.exports = (app) => {
-  const save = async (list) => {
+  const create = async (list) => {
     if (!list.name)
-      throw new Validation('List name is a required attribute');
+      throw new ValidationError('List name is a required attribute');
+
+    const listDb = await findOne({ name: list.name, user_id: list.user_id });
+    if (listDb) throw new ValidationError('A list with that name already exists!');
 
     return app.db('lists').insert(list, '*');
   };
@@ -12,8 +15,12 @@ module.exports = (app) => {
     return app.db('lists');
   };
 
-  const findId = (filter = {}) => {
+  const findOne = (filter = {}) => {
     return app.db('lists').where(filter).first();
+  };
+
+  const findId = (userId) => {
+    return app.db('lists').where({ user_id: userId });
   };
 
   const update = (id, list) => {
@@ -28,7 +35,7 @@ module.exports = (app) => {
       .del()
   }
 
-  return { save, findAll, findId, update, remove };
+  return { create, findAll, findOne, findId, update, remove };
 
 
 };

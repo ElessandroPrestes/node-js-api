@@ -2,8 +2,9 @@ const request = require('supertest');
 const app = require('../../server/app');
 
 test('Must create user via signup', () => {
+  const mail = `${Date.now()}@gmail.com`;
   return request(app).post('/auth/signup')
-    .send({ name: 'Valkyrie', mail: `${Date.now()}@gmail.com`, password: '654321' })
+    .send({ name: 'Valkyrie', mail, password: '654321' })
     .then((res) => {
       expect(res.status).toBe(201);
       expect(res.body.name).toBe('Valkyrie');
@@ -50,7 +51,7 @@ test('Should not authorize user that does not exist', () => {
 });
 
 test('Must not access a protected route without a token', () => {
-  return request(app).get('/users')
+  return request(app).get('/api/users')
     .then((res) => {
       expect(res.status).toBe(401);
     });

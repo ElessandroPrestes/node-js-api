@@ -1,35 +1,48 @@
+const express = require('express');
+const ResourceImproperError = require('../errors/ResourceImproperError');
+
+
 module.exports = (app) => {
-  const create = (req, res, next) => {
-    app.services.list.save(req.body)
+  const router = express.Router();
+
+  router.param('id', (req, res, next) => {
+    app.services.list.findOne({ id: req.params.id })
+      .then((lis) => {
+        if (lis.user_id !== req.user.id) throw new ResourceImproperError();
+        else next();
+      }).catch(err => next(err));
+  });
+
+  router.post('/', (req, res, next) => {
+    app.services.list.create({ ...req.body, user_id: req.user.id })
       .then((resul) => {
         return res.status(201).json(resul[0]);
       }).catch(err => next(err));
-  };
+  });
 
-  const findAll = (req, res, next) => {
-    app.services.list.findAll()
+  router.get('/', (req, res, next) => {
+    app.services.list.findId(req.user.id)
       .then(resul => res.status(200).json(resul))
       .catch(err => next(err));
-  };
+  });
 
-  const findId = (req, res, next) => {
-    app.services.list.findId({ id: req.params.id })
+  router.get('/:id', (req, res, next) => {
+    app.services.list.findOne({ id: req.params.id })
       .then(resul => res.status(200).json(resul))
       .catch(err => next(err));
-  };
+  });
 
-  const update = (req, res, next) => {
+  router.put('/:id', (req, res, next) => {
     app.services.list.update(req.params.id, req.body)
       .then(resul => res.status(200).json(resul[0]))
       .catch(err => next(err));
-  };
+  });
 
-  const remove = (req, res, next) => {
+  router.delete('/:id', (req, res, next) => {
     app.services.list.remove(req.params.id)
       .then(() => res.status(204).send())
       .catch(err => next(err));
-  }
+  });
 
-  return { create, findAll, findId, update, remove };
-
+  return router;
 };
