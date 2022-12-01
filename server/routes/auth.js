@@ -1,14 +1,17 @@
+const express = require('express');
 const jwt = require('jwt-simple');
 const bcrypt = require('bcrypt-nodejs');
-const Validation = require('../errors/Validation');
+const ValidationError = require('../errors/Validation');
 
 const secret = 'Secret';
 
 module.exports = (app) => {
-  const signin = (req, res, next) => {
+  const router = express.Router();
+
+  router.post('/signin', (req, res, next) => {
     app.services.user.findOne({ mail: req.body.mail })
       .then((user) => {
-        if (!user) throw new Validation('Invalid username or password');
+        if (!user) throw new ValidationError('Invalid username or password');
         if (bcrypt.compareSync(req.body.password, user.password)) {
           const payload = {
             id: user.id,
@@ -17,9 +20,18 @@ module.exports = (app) => {
           };
           const token = jwt.encode(payload, secret);
           res.status(200).json({ token });
-        } else throw new Validation('Invalid username or password');
+        } else throw new ValidationError('Invalid username or password');
       }).catch(err => next(err));
-  };
+  });
 
-  return { signin };
-}
+  router.post('/signup', async (req, res, next) => {
+    try {
+      const resul = await app.services.user.create(req.body);
+      return res.status(201).json(resul[0]);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  return router;
+};

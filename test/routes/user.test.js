@@ -5,17 +5,19 @@ const app = require('../../server/app');
 
 const mail = `${Date.now()}@gmail.com`;
 
+const USERS_ROUTE = '/api/users';
 let user;
 
 beforeAll(async () => {
-  const res = await app.services.user.create({ name: 'Heimdall', mail: `${Date.now()}@gmail.com`, password: 'marvel' });
+  const mail = `${Date.now()}@gmail.com`;
+  const res = await app.services.user.create({ name: 'Heimdall', mail, password: 'marvel' });
   user = { ...res[0] };
   user.token = jwt.encode(user, 'Secret');
 });
 
 
 test('Must list all users', () => {
-  return request(app).get('/users')
+  return request(app).get(USERS_ROUTE)
     .set('authorization', `bearer ${user.token}`)
     .then((res) => {
       expect(res.status).toBe(200);
@@ -24,7 +26,7 @@ test('Must list all users', () => {
 });
 
 test('You must enter user successfully', () => {
-  return request(app).post('/users')
+  return request(app).post(USERS_ROUTE)
     .send({ name: 'Thor Odinson', mail, password: '654321' })
     .set('authorization', `bearer ${user.token}`)
     .then((res) => {
@@ -35,7 +37,7 @@ test('You must enter user successfully', () => {
 });
 
 test('Must store encrypted password', async () => {
-  const res = await request(app).post('/users')
+  const res = await request(app).post(USERS_ROUTE)
     .send({ name: 'Loki Odinson', mail: `${Date.now()}@gmail.com`, password: '654321' })
     .set('authorization', `bearer ${user.token}`)
   expect(res.status).toBe(201);
@@ -47,7 +49,7 @@ test('Must store encrypted password', async () => {
 });
 
 test('Must not enter unnamed user', async () => {
-  const res = await request(app).post('/users')
+  const res = await request(app).post(USERS_ROUTE)
     .send({ mail: 'thor@gmail.com', password: '654321' })
     .set('authorization', `bearer ${user.token}`)
   expect(res.status).toBe(400);
@@ -56,7 +58,7 @@ test('Must not enter unnamed user', async () => {
 });
 
 test('Must not enter user without email', async () => {
-  const result = await request(app).post('/users')
+  const result = await request(app).post(USERS_ROUTE)
     .send({ name: 'Thor Odinson', password: '654321' })
     .set('authorization', `bearer ${user.token}`)
   expect(result.status).toBe(400);
@@ -64,7 +66,7 @@ test('Must not enter user without email', async () => {
 });
 
 test('Do not enter user without password', async () => {
-  const result = await request(app).post('/users')
+  const result = await request(app).post(USERS_ROUTE)
     .send({ name: 'Thor Odinson', mail: 'thor@gmail.com' })
     .set('authorization', `bearer ${user.token}`)
   expect(result.status).toBe(400);
@@ -73,7 +75,7 @@ test('Do not enter user without password', async () => {
 
 
 test('You must not enter user with the same email', async () => {
-  const res = await request(app).post('/users')
+  const res = await request(app).post('/api/users')
     .send({ name: 'Thor Odinson', mail, password: '654321' })
     .set('authorization', `bearer ${user.token}`)
   expect(res.status).toBe(400);
